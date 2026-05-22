@@ -8,9 +8,11 @@ import { Card } from '../ui/card';
 import EmptyRepo from './EmptyRepo';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import RepoDialog from './RepoDialog';
 
 const WorkspaceBody = () => {
   const [token, setToken] = useState<string | null>(null);
+  const [refreshPage, setRefreshPage] = useState(false);
 
   const { userDetail } = useContext(UserDetailContext);
   const router = useRouter();
@@ -26,10 +28,6 @@ const WorkspaceBody = () => {
   };
 
   const handleOnSetupRepo = async () => {
-    router.push('/api/github');
-  };
-
-  const handleOnAddRepo = async () => {
     router.push('/api/github');
   };
 
@@ -68,12 +66,9 @@ const WorkspaceBody = () => {
               Setup GitHub
             </Button>
           )) || (
-            <Button
-              className="mt-5 bg-green-600 text-white p-4 rounded hover:bg-green-700 transition-colors duration-200 flex gap-2 items-center hover:cursor-pointer"
-              onClick={handleOnAddRepo}
-            >
-              + Add Repository
-            </Button>
+            <RepoDialog
+              setRefreshPage={(refresh: boolean) => setRefreshPage(refresh)}
+            />
           )}
         </div>
       </Card>
