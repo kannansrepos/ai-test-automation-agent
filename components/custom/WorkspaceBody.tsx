@@ -1,14 +1,42 @@
 'use client';
 
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { UserDetailContext } from '@/contexts/userDetailContext';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import EmptyRepo from './EmptyRepo';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
 const WorkspaceBody = () => {
+  const [token, setToken] = useState<string | null>(null);
+
   const { userDetail } = useContext(UserDetailContext);
+  const router = useRouter();
+
+  const GetGithubToken = async () => {
+    try {
+      const response = await axios.get('/api/github/token');
+      const data = response.data;
+      setToken(data.token);
+    } catch (error) {
+      console.error('Error fetching GitHub token:', error);
+    }
+  };
+
+  const handleOnSetupRepo = async () => {
+    router.push('/api/github');
+  };
+
+  const handleOnAddRepo = async () => {
+    router.push('/api/github');
+  };
+
+  useEffect(() => {
+    GetGithubToken();
+  }, []);
+
   return (
     <div>
       <div className="p-4  flex justify-between items-center">
@@ -31,9 +59,22 @@ const WorkspaceBody = () => {
           </h2>
         </div>
         <div>
-          <Button className="ml-10 bg-black text-white hover:bg-green-600 hover:cursor-pointer hover:scale-105 transition-transform duration-200">
-            Install
-          </Button>
+          {' '}
+          {(!token && (
+            <Button
+              className="mt-5 bg-green-600 text-white p-4 rounded hover:bg-green-700 transition-colors duration-200 flex gap-2 items-center hover:cursor-pointer"
+              onClick={handleOnSetupRepo}
+            >
+              Setup GitHub
+            </Button>
+          )) || (
+            <Button
+              className="mt-5 bg-green-600 text-white p-4 rounded hover:bg-green-700 transition-colors duration-200 flex gap-2 items-center hover:cursor-pointer"
+              onClick={handleOnAddRepo}
+            >
+              + Add Repository
+            </Button>
+          )}
         </div>
       </Card>
       <Card className="mt-5 flex justify-center items-center p-4 bg-white border rounded-lg">
