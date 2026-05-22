@@ -1,6 +1,3 @@
 import { createContext } from 'react';
 
-export const UserDetailContext = createContext({
-  userDetail: null,
-  setUserDetail: (userDetail: any | null) => {},
-});
+export const UserDetailContext = createContext<any | null>(null);

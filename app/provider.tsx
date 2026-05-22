@@ -12,7 +12,7 @@ const Provider = ({
   const createNewUser = async () => {
     const user = await axios.post('/api/users', {});
     console.log('User created:', user.data);
-    setUserDetail(user.data);
+    setUserDetail(user.data[0]);
   };
   useEffect(() => {
     createNewUser();
