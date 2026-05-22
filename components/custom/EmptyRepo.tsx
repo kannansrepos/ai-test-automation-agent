@@ -20,7 +20,7 @@ const EmptyRepo = () => {
       <div className="flex flex-col items-center justify-center gap-4">
         <Button className="mt-5 bg-green-600 text-white p-4 rounded hover:bg-green-700 transition-colors duration-200 flex gap-2 items-center">
           <Image
-            src="/image/github-white.svg"
+            src="/image/link-chain.svg"
             alt="GitHub Logo"
             width={20}
             height={20}
