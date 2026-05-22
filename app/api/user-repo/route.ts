@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { desc, eq } from 'drizzle-orm';
 import { db, repositories } from '../../../db';
 
 const POST = async (request: NextRequest) => {
@@ -39,7 +40,41 @@ const POST = async (request: NextRequest) => {
     });
   } catch (error) {
     console.error('Error adding user repository:', error);
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 };
 
-export { POST };
+const GET = async (request: NextRequest) => {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing userId parameter' }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      );
+    }
+    const userRepos = await db
+      .select()
+      .from(repositories)
+      .where(eq(repositories.userId, Number(userId)))
+      .orderBy(desc(repositories.updatedAt));
+    return new Response(JSON.stringify({ repositories: userRepos }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error fetching user repositories:', error);
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500,
+    });
+  }
+};
+
+export { POST, GET };

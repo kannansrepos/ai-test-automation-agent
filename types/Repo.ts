@@ -1,16 +1,16 @@
 interface Repo {
   id: number;
   name: string;
-  full_name: string;
+  fullName: string;
   description: string;
-  html_url: string;
-  stargazers_count: number;
+  htmlUrl: string;
+  stargazersCount: number;
   isPrivate: boolean;
   language: string;
-  default_branch: string;
+  defaultBranch: string;
   owner: string;
-  updated_at: string;
-  created_at: string;
+  updatedAt: string;
+  createdAt: string;
 }
 
 export default Repo;
