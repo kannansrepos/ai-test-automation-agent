@@ -61,10 +61,6 @@ const WorkspaceBody = () => {
     <div>
       <div className="p-4  flex justify-between items-center">
         <h2 className="text-4xl font-bold">Workspace</h2>
-        <h2 className="bg-blue-100 text-blue-800 px-2 py-1 font-semibold rounded-xl">
-          Remaining Credits:{' '}
-          <span className="font-bold">{userDetail?.credits ?? 0}</span>
-        </h2>
       </div>
       <Card className="mt-5 flex justify-between items-center p-4 bg-white border rounded-lg">
         <div className="flex gap-2 items-center">

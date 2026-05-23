@@ -202,6 +202,7 @@ const RepoList = ({ repositories }: Props) => {
                       <div>
                         <TestCaseList
                           testCases={testCases}
+                          repository={repo}
                           onReload={() => fetchTestCases(selectedRepoId!)}
                         />
                       </div>
