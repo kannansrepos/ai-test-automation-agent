@@ -1,9 +1,8 @@
 import axios from 'axios';
-import { cookies } from 'next/headers';
+import { getGithubToken } from '@/utils/githubHelper';
 
 const GET = async () => {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('github_token')?.value;
+  const token = await getGithubToken();
   if (!token) {
     return new Response(JSON.stringify({ error: 'Github token not found' }), {
       headers: { 'Content-Type': 'application/json' },

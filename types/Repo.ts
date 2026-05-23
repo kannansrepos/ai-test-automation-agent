@@ -1,5 +1,6 @@
 interface Repo {
   id: number;
+  repoId: number;
   name: string;
   fullName: string;
   description: string;

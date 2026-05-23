@@ -1,5 +1,7 @@
 allowBuilds:
   '@clerk/shared': false
+  '@google/genai': true
   esbuild: false
+  protobufjs: false
   sharp: false
   unrs-resolver: false

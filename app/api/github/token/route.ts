@@ -1,8 +1,7 @@
-import { cookies } from 'next/headers';
+import { getGithubToken } from '@/utils/githubHelper';
 
 const GET = async () => {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('github_token')?.value;
+  const token = await getGithubToken();
   return new Response(JSON.stringify({ token }), {
     headers: { 'Content-Type': 'application/json' },
   });

@@ -1,4 +1,11 @@
-import { integer, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -27,8 +34,39 @@ export const repositories = pgTable('repositories', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const TestCasesTable = pgTable('test_cases', {
+  id: serial('id').primaryKey(),
+  // Repository Informations
+  repoId: integer('repository_id')
+    .notNull()
+    .references(() => repositories.id, { onDelete: 'cascade' }),
+  githubRepoId: integer('github_repo_id').notNull(),
+  repoName: text('repo_name').notNull(),
+  repoOwner: text('repo_owner').notNull(),
+  branch: text('branch').default('main').notNull(),
+
+  // Test Case Informations
+  title: text('title').notNull(),
+  description: text('description'),
+  type: text('type').notNull(),
+  priority: text('priority').notNull(),
+
+  // Test case content
+  targetRoute: text('target_route').notNull(),
+  targetFile: jsonb('target_file').$type<string[]>().default([]),
+  expectedResult: text('expected_result').notNull(),
+
+  testScript: text('test_script').notNull(),
+  status: text('status').default('generated').notNull(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 
 export type Repository = typeof repositories.$inferSelect;
 export type NewRepository = typeof repositories.$inferInsert;
+
+export type TestCase = typeof TestCasesTable.$inferSelect;
+export type NewTestCase = typeof TestCasesTable.$inferInsert;
