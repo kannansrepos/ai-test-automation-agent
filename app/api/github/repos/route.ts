@@ -1,5 +1,8 @@
 import axios from 'axios';
-import { getGithubToken } from '@/utils/githubHelper';
+import { clearGithubToken, getGithubToken } from '@/utils/githubHelper';
+import { NextRequest, NextResponse } from 'next/server';
+import { db, repositories } from '../../../../db';
+import { eq } from 'drizzle-orm';
 
 const GET = async () => {
   const token = await getGithubToken();
@@ -20,6 +23,10 @@ const GET = async () => {
         },
       },
     );
+    console.log(`Fetched page ${page} of repositories`, response.status);
+    if (response.status === 401) {
+      await clearGithubToken();
+    }
     const repos = await response.data.map((repo: any) => ({
       id: repo.id,
       name: repo.name,
@@ -44,4 +51,35 @@ const GET = async () => {
   });
 };
 
-export { GET };
+const PUT = async (request: NextRequest) => {
+  try {
+    const requestData = await request.json();
+    const { repoId, targetDomain, globalInstructions } = requestData;
+    const response = await db
+      .update(repositories)
+      .set({
+        targetDomain,
+        globalInstructions,
+        updatedAt: new Date(),
+      })
+      .where(eq(repositories.repoId, repoId))
+      .returning();
+
+    return new NextResponse(JSON.stringify({ repo: response[0] }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error updating repository settings:', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'Failed to update repository settings' }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+        status: 500,
+      },
+    );
+  } finally {
+    // Optionally clear the token or perform any cleanup if needed
+  }
+};
+
+export { GET, PUT };

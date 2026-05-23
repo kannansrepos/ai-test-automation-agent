@@ -9,7 +9,10 @@ import {
 import Repo from '@/types/Repo';
 import {
   CheckCircle2,
+  Globe2Icon,
+  Link2Icon,
   ListChecks,
+  Settings2Icon,
   Sparkles,
   StarIcon,
   TrendingUp,
@@ -24,6 +27,7 @@ import axios from 'axios';
 import { Spinner } from '../ui/spinner';
 import TestCaseList from './TestCaseList';
 import { StatusData } from '../../types/Statusdata';
+import RepoSettingDialog from '../dialogs/RepoSettingDialog';
 type Props = {
   repositories: Repo[];
 };
@@ -143,6 +147,20 @@ const RepoList = ({ repositories }: Props) => {
               </div>
             </AccordionTrigger>
             <AccordionContent>
+              {/* Repo level Settings */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Link2Icon className="w-5 h-5 inline-block mr-2 text-primary" />
+                  <h2>Target Domain</h2>
+                  <h2 className="bg-white text-primary p-1 px-2 border rounded-md font-medium">
+                    {repo.targetDomain}
+                  </h2>
+                </div>
+                <RepoSettingDialog
+                  repo={repo}
+                  onReload={() => fetchTestCases(selectedRepoId!)}
+                />
+              </div>
               {/* Status Cards and Generate Test Cases Button */}
               <div className="pt-4 space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

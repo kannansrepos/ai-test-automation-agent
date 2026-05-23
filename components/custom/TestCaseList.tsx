@@ -4,6 +4,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Play, RefreshCw, Settings2Icon, SettingsIcon } from 'lucide-react';
 import { useState } from 'react';
+import TestCaseSettingDialog from '../dialogs/TestCaseSettingDialog';
 type Props = {
   testCases: TestCase[];
   onReload: () => void;
@@ -82,13 +83,7 @@ const TestCaseList = ({ testCases, onReload }: Props) => {
               {testCase.type}
             </Badge>
             <Badge className="ml-auto p-2">{testCase.status}</Badge>
-            <Button
-              size="icon"
-              variant="outline"
-              className="ml-auto cursor-pointer"
-            >
-              <SettingsIcon className="w-4 h-4" />
-            </Button>
+            <TestCaseSettingDialog testCase={testCase} setReload={onReload} />
           </div>
         </div>
       ))}

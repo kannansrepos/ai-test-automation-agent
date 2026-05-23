@@ -10,6 +10,8 @@ interface Repo {
   language: string;
   defaultBranch: string;
   owner: string;
+  targetDomain: string;
+  globalInstructions: string;
   updatedAt: string;
   createdAt: string;
 }

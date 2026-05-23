@@ -84,5 +84,15 @@ const getGithubToken = async () => {
   const token = cookieStore.get('github_token')?.value;
   return token;
 };
+const clearGithubToken = async () => {
+  const cookieStore = await cookies();
+  cookieStore.delete('github_token');
+};
 
-export { isUsefulFile, getRepoTree, readGithubFile, getGithubToken };
+export {
+  isUsefulFile,
+  getRepoTree,
+  readGithubFile,
+  getGithubToken,
+  clearGithubToken,
+};

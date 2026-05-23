@@ -10,7 +10,6 @@ const POST = async (_: NextRequest) => {
       .select()
       .from(users)
       .where(eq(users.email, user?.primaryEmailAddress?.emailAddress ?? ''));
-    console.log('Current user:', existingUser);
 
     if (existingUser.length <= 0) {
       const newUser = await db

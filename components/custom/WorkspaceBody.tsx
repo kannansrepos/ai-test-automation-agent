@@ -8,7 +8,7 @@ import { Card, CardContent } from '../ui/card';
 import EmptyRepo from './EmptyRepo';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import RepoDialog from './RepoDialog';
+import RepoDialog from '../dialogs/RepoDialog';
 import Repo from '@/types/Repo';
 import RepoList from './RepoList';
 

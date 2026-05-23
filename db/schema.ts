@@ -30,6 +30,8 @@ export const repositories = pgTable('repositories', {
   language: text('language'),
   defaultBranch: text('default_branch'),
   owner: text('owner').notNull(),
+  targetDomain: text('target_domain').default('http://localhost:3000/'),
+  globalInstructions: text('global_instructions'),
   updatedAt: timestamp('updated_at').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
