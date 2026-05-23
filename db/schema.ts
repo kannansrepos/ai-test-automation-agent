@@ -55,11 +55,15 @@ export const TestCasesTable = pgTable('test_cases', {
 
   // Test case content
   targetRoute: text('target_route').notNull(),
-  targetFile: jsonb('target_file').$type<string[]>().default([]),
+  targetFiles: jsonb('target_files').$type<string[]>().default([]),
   expectedResult: text('expected_result').notNull(),
 
   testScript: text('test_script').notNull(),
   status: text('status').default('generated').notNull(),
+
+  logs: jsonb('logs').$type<string[]>().default([]),
+  sessionId: text('session_id'),
+  sessionUrl: text('session_url'),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

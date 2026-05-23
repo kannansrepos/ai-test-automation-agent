@@ -10,9 +10,12 @@ export interface TestCase {
   type: string;
   priority: string;
   targetRoute: string;
-  targetFile: string[];
+  targetFiles: string[];
   expectedResult: string;
   testScript: string;
   status: string;
+  logs?: string[];
+  sessionId?: string;
+  sessionUrl?: string;
   createdAt: string;
 }

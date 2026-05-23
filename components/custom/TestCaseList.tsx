@@ -3,14 +3,18 @@ import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Play, RefreshCw, Settings2Icon, SettingsIcon } from 'lucide-react';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import TestCaseSettingDialog from '../dialogs/TestCaseSettingDialog';
+import { cn } from '../../lib/utils';
+import TestExecutionModal from '../dialogs/TestExecutionDialog';
 type Props = {
   testCases: TestCase[];
+  repository: any;
   onReload: () => void;
 };
-const TestCaseList = ({ testCases, onReload }: Props) => {
+const TestCaseList = ({ testCases, repository, onReload }: Props) => {
   const [selectedTestCases, setSelectedTestCases] = useState<TestCase[]>([]);
+  const [testExecutionOpen, setTestExecutionOpen] = useState(false);
 
   const toggleTestCaseSelection = (testCase: TestCase) => {
     setSelectedTestCases((prevSelected) => {
@@ -32,10 +36,34 @@ const TestCaseList = ({ testCases, onReload }: Props) => {
     }
   };
 
+  const GetStatusBadge = (status: string): ReactNode => {
+    let cls = '';
+    switch (status) {
+      case 'failed': {
+        cls = 'text-red-200 bg-red-700 hover:text-red-200 hover:bg-red-700';
+        break;
+      }
+      case 'passed': {
+        cls =
+          'text-green-200 bg-green-700 hover:text-green-200 hover:bg-green-700';
+        break;
+      }
+      case 'running': {
+        cls =
+          'text-yellow-200 bg-yellow-700 hover:text-yellow-200 hover:bg-yellow-700';
+        break;
+      }
+      default: {
+        cls = 'text-gray-700 bg-gray-200 hover:text-gray-700 hover:bg-gray-200';
+        break;
+      }
+    }
+    return <Badge className={cn('ml-auto p-2', cls)}>{status}</Badge>;
+  };
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold mb-4">Generated Testcases</h2>
+        <h2 className="text-xl font-bold mb-4 ">Generated Testcases</h2>
         <Button
           size="icon"
           variant="outline"
@@ -56,10 +84,19 @@ const TestCaseList = ({ testCases, onReload }: Props) => {
               size="sm"
               variant="outline"
               disabled={selectedTestCases.length === 0}
+              onClick={() => setTestExecutionOpen(true)}
             >
               <Play className="w-4 h-4 mr-2" />
               Run Selected
             </Button>
+            <TestExecutionModal
+              repository={repository}
+              testCases={selectedTestCases}
+              onClose={() => {
+                setTestExecutionOpen(false);
+              }}
+              isOpen={testExecutionOpen}
+            />
           </div>
         </div>
       </div>
@@ -82,7 +119,7 @@ const TestCaseList = ({ testCases, onReload }: Props) => {
             <Badge className="ml-auto p-2" variant="secondary">
               {testCase.type}
             </Badge>
-            <Badge className="ml-auto p-2">{testCase.status}</Badge>
+            {GetStatusBadge(testCase.status)}
             <TestCaseSettingDialog testCase={testCase} setReload={onReload} />
           </div>
         </div>
