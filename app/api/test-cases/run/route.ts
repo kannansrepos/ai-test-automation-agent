@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { db } from '@/db';
 import { TestCasesTable, repositories } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { cookies } from 'next/headers';
-import Browserbase from '@browserbasehq/sdk';
+import { existsSync } from 'fs';
 import { chromium } from 'playwright-core';
-import axios from 'axios';
 import { getGithubToken, readGithubFile } from '../../../../utils/githubHelper';
 import { playwrightTestcasePrompt } from '../../../../prompts/playwrightTestcasePrompt';
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
-});
-
-const bb = new Browserbase({
-  apiKey: process.env.BROWSERBASE_API_KEY!,
 });
 
 export async function POST(req: NextRequest) {
@@ -84,9 +78,8 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
-      // Fetch target files context
-      const targetFiles = testCase.targetFiles || [];
 
+      const targetFiles = testCase.targetFiles || [];
       let repoContext = '';
 
       if (targetFiles.length > 0) {
@@ -118,7 +111,6 @@ ${file.content}
           .join('\n\n----------------------------------\n\n');
       }
 
-      // Build global instructions and runtime prompt
       const globalIns = repoRecord?.globalInstructions
         ? `\n[GLOBAL PROJECT INSTRUCTIONS] (Follow strictly):\n${repoRecord.globalInstructions}\n`
         : '';
@@ -127,7 +119,6 @@ ${file.content}
         ? `\n[ADDITIONAL RUNTIME INSTRUCTIONS] (Follow strictly):\n${customPrompt}\n`
         : '';
 
-      // Prompt Gemini for Playwright code string
       const prompt = playwrightTestcasePrompt(
         baseUrl,
         testCase,
@@ -142,7 +133,6 @@ ${file.content}
       });
       let generatedCode = response.text || '';
 
-      // Clean up any stray markdown wrappers just in case
       generatedCode = generatedCode.replace(/^```javascript\s*/i, '');
       generatedCode = generatedCode.replace(/```$/i, '');
       generatedCode = generatedCode.trim();
@@ -156,7 +146,6 @@ ${file.content}
 
       scriptText = generatedCode;
 
-      // Save the generated script immediately to database
       await db
         .update(TestCasesTable)
         .set({
@@ -165,7 +154,6 @@ ${file.content}
         })
         .where(eq(TestCasesTable.id, testCase.id));
     } else {
-      // 3. Mark database status as running
       await db
         .update(TestCasesTable)
         .set({
@@ -173,6 +161,7 @@ ${file.content}
         })
         .where(eq(TestCasesTable.id, testCase.id));
     }
+
     const logs: string[] = [];
 
     const customConsole = {
@@ -182,7 +171,6 @@ ${file.content}
             .map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a)))
             .join(' '),
         ),
-
       error: (...args: any[]) =>
         logs.push(
           '[ERROR] ' +
@@ -192,7 +180,6 @@ ${file.content}
               )
               .join(' '),
         ),
-
       warn: (...args: any[]) =>
         logs.push(
           '[WARN] ' +
@@ -204,44 +191,54 @@ ${file.content}
         ),
     };
 
-    let session: any = null;
     let browser: any = null;
+    let context: any = null;
+    let page: any = null;
 
     try {
-      // 4. Create Browserbase Session
-      session = await bb.sessions.create({
-        projectId: process.env.BROWSERBASE_PROJECT_ID!,
-      });
+      const executablePath =
+        process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
+        process.env.CHROME_HEADLESS_SHELL_PATH ||
+        process.env.PLAYWRIGHT_EXECUTABLE_PATH;
+      const launchOptions: any = {
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
+      };
 
-      logs.push(
-        `[SYSTEM] Browserbase session created successfully with ID: ${session.id}`,
-      );
+      if (executablePath) {
+        if (!existsSync(executablePath)) {
+          throw new Error(
+            `Custom Chromium executable not found at ${executablePath}. ` +
+              'Please verify PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH or CHROME_HEADLESS_SHELL_PATH in your env.',
+          );
+        }
 
-      // 5. Connect Playwright to Session
+        launchOptions.executablePath = executablePath;
+        logs.push(
+          `[SYSTEM] Using custom Chromium executable path: ${executablePath}`,
+        );
+      } else {
+        logs.push('[SYSTEM] Using default Playwright Chromium executable.');
+      }
 
-      browser = await chromium.connectOverCDP(session.connectUrl);
+      browser = await chromium.launch(launchOptions);
 
-      const context = browser.contexts()[0];
+      context = await browser.newContext();
+      page = await context.newPage();
 
-      const page = context.pages()[0];
-
-      // 6. Listen to Browser Console Events
       page.on('console', (msg: any) => {
         logs.push(`[BROWSER] ${msg.type().toUpperCase()} ${msg.text()}`);
       });
 
       logs.push(
-        '[SYSTEM] Connected to Browserbase cloud browser, executing script...',
+        '[SYSTEM] Playwright browser launched locally, executing script...',
       );
 
-      // 7. Compile and run script
       const AsyncFunction = Object.getPrototypeOf(
         async function () {},
       ).constructor;
-
       const runFn = new AsyncFunction('page', 'assert', 'console', scriptText);
 
-      // Mock assertion helper for runtime container if script assumes assert is global
       const assertHelper = (condition: boolean, message?: string) => {
         if (!condition) {
           throw new Error(message || 'Assertion failed');
@@ -254,66 +251,59 @@ ${file.content}
         '[SYSTEM] Script execution completed successfully without errors.',
       );
 
-      // 8. Clean up session and browser
       await page.close().catch(() => {});
+      await context.close().catch(() => {});
       await browser.close().catch(() => {});
 
-      // Update DB status to passed
       await db
         .update(TestCasesTable)
         .set({
           status: 'passed',
           testScript: scriptText,
           logs: logs,
-          sessionId: session.id,
-          sessionUrl: `https://app.browserbase.com/sessions/${session.id}`,
+          sessionId: null,
+          sessionUrl: null,
         })
         .where(eq(TestCasesTable.id, testCase.id));
 
       return NextResponse.json({
         success: true,
         status: 'passed',
-        sessionId: session.id,
-        sessionUrl: `https://app.browserbase.com/sessions/${session.id}`,
         logs,
         browserbaseScript: scriptText,
       });
     } catch (execError: any) {
       console.error('Script execution error:', execError);
 
-      logs.push(
-        `[SYSTEM ERROR] Script execution failed: ${
-          execError.message || String(execError)
-        }`,
-      );
+      const execMessage = execError.message || String(execError);
+      const installHint =
+        execMessage.includes(
+          'Looks like Playwright was just installed or updated',
+        ) || execMessage.includes("Executable doesn't exist")
+          ? `Playwright browser executable is missing. Run \`pnpm exec playwright install\` to install the browser binaries, or set PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH / CHROME_HEADLESS_SHELL_PATH in your environment.`
+          : undefined;
 
-      // Clean up session and browser if still active
-      if (browser) {
-        await browser.close().catch(() => {});
-      }
+      logs.push(`[SYSTEM ERROR] Script execution failed: ${execMessage}`);
 
-      // 10. Update DB status to failed
+      await page?.close().catch(() => {});
+      await context?.close().catch(() => {});
+      await browser?.close().catch(() => {});
+
       await db
         .update(TestCasesTable)
         .set({
           status: 'failed',
           testScript: scriptText,
           logs: logs,
-          sessionId: session?.id || null,
-          sessionUrl: session
-            ? `https://www.browserbase.com/sessions/${session.id}`
-            : null,
+          sessionId: null,
+          sessionUrl: null,
         })
         .where(eq(TestCasesTable.id, testCase.id));
 
       return NextResponse.json({
         success: false,
         status: 'failed',
-        error: execError.message || String(execError),
-        sessionId: session?.id,
-        sessionUrl: session
-          ? `https://www.browserbase.com/sessions/${session.id}`
-          : null,
+        error: installHint ? `${execMessage} ${installHint}` : execMessage,
         logs,
         browserbaseScript: scriptText,
       });
